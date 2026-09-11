@@ -435,6 +435,8 @@ async function main() {
     await testMultiTab();
     await testCancelReopens(lastTeam);
     await testNotOpen();
+    // testNotOpen 의 T7b 가 is_closed=true 로 바꿔둔 채 끝나므로 되돌린다.
+    await setSettings(new Date(Date.now() - 60_000).toISOString(), false);
     await testDuplicateRetry();
   } catch (e) {
     check("실행 오류", false, String(e));

@@ -28,7 +28,7 @@
     PGRST202 류 오류) / service_role 로 `admin_update_settings` 새 4-인자
     시그니처 호출 시 현재 값을 그대로 다시 써서 설정이 바뀌지 않게 할 것.
 
-- [ ] V2. 기존 동시성 테스트
+- [x] V2. 기존 동시성 테스트
   - `npm run load-test -- --n 100 --capacity 10 --rounds 3` 실행. T1~T8 전
     항목 결과와 p95 를 기록.
   - 하나라도 FAIL 이면 여기서 멈추고 출력 원문을 보고한다.

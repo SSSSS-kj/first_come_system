@@ -36,7 +36,16 @@
   실행 전에는 `__sim__A~D` 팀 생성 로직이 기존 teams 유무에 의존하지 않는지
   스크립트 작성 시 확인 필요.
 
-## V2. 기존 동시성 테스트 — FAIL (T8, 테스트 스크립트 결함으로 판단)
+## V2. 기존 동시성 테스트 — PASS (재실행)
+
+`scripts/load-test.mjs`의 `testNotOpen()` → `testDuplicateRetry()` 사이에
+`setSettings(new Date(Date.now() - 60_000).toISOString(), false)` 를 추가해
+`is_closed`를 open 상태로 되돌린 뒤 재실행 → **27/27 통과**.
+
+- round1 p95 705ms / round2 p95 480ms / round3 p95 486ms.
+- T8a~T8d 전부 PASS (`status=ok` → `duplicate_name`, `existing` 일치, `taken=1` 유지).
+
+### 최초 실행 결과 (수정 전, 참고용) — FAIL (T8, 테스트 스크립트 결함으로 판단)
 
 `npm run load-test -- --n 100 --capacity 10 --rounds 3` 실행 결과: **23/27 통과**.
 
