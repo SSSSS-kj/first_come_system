@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "hash-password": "node scripts/hash-password.mjs",
-    "load-test": "node scripts/load-test.mjs"
+    "load-test": "node scripts/load-test.mjs",
+    "event-sim": "node scripts/event-sim.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
