@@ -129,6 +129,60 @@ duplicate-check보다 먼저 검사하므로(`supabase/schema.sql` 199~206행) �
   그대로 둠(정상).
 - (선택) `--site-url` 배포 URL 확인은 스킵 — 아직 배포 URL 없음.
 
-## V4. 브라우저 E2E — 미실행
+## V4. 브라우저 E2E — PASS (Playwright)
+
+`@playwright/test` devDependency + Chromium 설치 승인받아 진행.
+
+### 환경 이슈 (기록용, 코드와 무관)
+
+- 이 머신은 Arch Linux(WSL) 라서 Playwright 의 `install-deps`(apt 전제)가
+  동작하지 않았다. `ldd` 로 실제 누락된 공유 라이브러리를 확인해
+  `pacman -S nss nspr atk at-spi2-core libx11 libxcomposite libxdamage
+  libxext libxfixes libxrandr mesa libxcb libxkbcommon alsa-lib` 로 직접
+  설치(사용자가 sudo 실행)한 뒤 정상 동작 확인.
+- 데이터 준비/정리는 `e2e/helpers.ts` 에서 service_role 로 수행, `__e2e__`
+  팀만 사용, 각 테스트 `afterEach` 에서 settings 원복 + 팀/신청 정리.
+  `playwright.config.ts` 는 `workers: 1` 로 고정(모든 테스트가 같은
+  Supabase 프로젝트의 단일 settings 행·teams 를 공유 조작하므로 병렬 실행
+  불가).
+
+### 결과 — `npx playwright test` 7/7 PASS (E1~E6, E8)
+
+- **E1(T1)** 오픈 전 팀/이름 선택 가능 + 제출 버튼 비활성 확인, 이후
+  `get_public_state` RPC 를 강제로 막은 상태에서도 오픈 순간 버튼이 활성화됨을
+  확인(로컬 시계 기반 `opened` 상태가 폴링 응답에 의존하지 않음, T1 의도대로).
+  실측 활성화 지연은 스펙 단독 실행 시 약 10ms. **테스트 스위트를 연달아
+  돌리면 일관되게 ~1.3초**로 나타났는데, 원인은 Chromium 이 포커스가
+  불확실한(백그라운드로 간주되는) 탭의 `setInterval` 을 스로틀링하는 잘 알려진
+  동작으로 추정된다(앱 코드는 정상; 실제 사용자는 카운트다운을 보려고 탭을
+  열어 둔 상태이므로 이 스로틀링을 겪지 않는다). 테스트는 "4초 폴링 주기보다
+  훨씬 빠르다(2초 이내)"는 핵심만 넉넉한 예산으로 검증하도록 조정.
+- **E2(T1)** 선택해 둔 팀을 다른 사람이 채우면(anon RPC 직접 호출) 5초 내
+  자동 선택 해제 + 안내 배너 확인.
+- **E3(T2)** 이미 배정된 사람이 같은 이름/학번으로 재신청 → `team_full` 이
+  아니라 기존 배정(ResultPanel, 동일 seq)을 그대로 보여주고 `teams.taken`
+  이 늘지 않음을 확인. **참고(버그 아님, 코드는 수정하지 않음)**:
+  `RegisterView.submit()` 의 `duplicate_name` 분기는 `persist()`(→ `me`
+  세팅) 를 `setBanner("이미 접수된 신청을 불러왔습니다.")` 보다 먼저 호출하는데,
+  `if (me) return <ResultPanel/>` 가 조기 반환이라 이 배너는 이 경로에서
+  실제로 그려질 기회가 없다(항상 ResultPanel 로 즉시 넘어감). 사용자 경험에
+  문제가 되진 않지만(오히려 결과 화면이 바로 보이는 편이 나을 수 있음),
+  죽은 상태값이라는 점은 기록해둔다.
+- **E4(T3)** `register_for_team` 응답을 지연시키면(요청이 서버에 닿지 않게
+  15초 뒤 abort) 클라이언트의 `abortSignal(10_000)` 이 먼저 끊어 약
+  10~13초 후 "제출 중…" 이 풀리고 "응답이 늦어…" 안내가 뜸을 확인.
+- **E5(T4)** 관리자 탭 2개 — A 가 즉시 마감 → B 가 오픈 시각만 저장해도
+  `is_closed` 가 그대로 유지됨을 DB 로 확인(부분 업데이트 정상). 오픈 시각
+  입력이 비어 있으면 저장 버튼이 비활성임도 확인.
+- **E6** `/board` — 신청/이관/취소가 각각 5초 내 반영됨을 확인(관리자
+  RPC 는 service_role 로 직접 호출해 실제 관리자 동작을 흉내).
+- **E7**: T5(학번 입력 제거)가 철회되어 미적용이므로 계획대로 스킵.
+- **E8** 390px 모바일 뷰포트에서 팀 선택 → 입력 → 확인 모달 → 신청 완료
+  전 구간에서 가로 스크롤이 발생하지 않음을 확인.
+
+테스트 실행 후 DB 확인: `__e2e__` 팀/신청 전부 정리, 실제 팀(퀀트 등)
+`taken` 모두 0, `settings` 원복(`opens_at: null, is_closed: false`) 확인.
+`npm run typecheck` / `npm run build` 도 새 `e2e/*.ts`, `playwright.config.ts`
+포함해 정상 통과.
 
 ## V5. 최종 보고서 — 미작성

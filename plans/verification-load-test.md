@@ -56,7 +56,7 @@
   - (선택) 배포 URL 제공 시 `--site-url` 로 `/`, `/board` 100건 동시 GET
     상태코드·p95 기록.
 
-- [ ] V4. 브라우저 E2E (Playwright)
+- [x] V4. 브라우저 E2E (Playwright)
   - `@playwright/test` devDependency·브라우저 설치는 승인 후 진행. 거절 시
     수동 체크리스트로 `docs/verification-report.md` 에 작성.
   - 데이터 준비·정리는 테스트 코드에서 service_role 로, `__e2e__` 팀만 사용.
