@@ -41,7 +41,7 @@
       재신청 → status=duplicate_name, existing.team_id 일치, taken=1 유지.
   - schema.sql 변경 태스크 → 완료 보고에 "Supabase SQL Editor에서 schema.sql 재실행 필요" 명시.
 
-- [ ] T3. 제출 응답 타임아웃
+- [x] T3. 제출 응답 타임아웃
   - 문제: `RegisterView`의 register_for_team / lookup_registration 호출에 타임아웃이
     없어 모바일에서 연결이 멈추면 "제출 중…"이 끝나지 않는다.
   - 수정:

@@ -32,6 +32,14 @@ function loadStored(): MyRegistration | null {
   }
 }
 
+/** 모바일 등에서 연결이 멈췄을 때 "제출 중…" 이 끝나지 않는 것을 막는다. */
+function timeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 export default function RegisterView() {
   const { teams, opensAt, isClosed, clockOffsetMs, loading, error, realtime, refresh } =
     useContest();
@@ -54,10 +62,12 @@ export default function RegisterView() {
     void (async () => {
       let res: RegisterResult | null = null;
       try {
-        const { data } = await getSupabase().rpc("lookup_registration", {
-          p_name: stored.name,
-          p_student_no4: stored.student_no4,
-        });
+        const { data } = await getSupabase()
+          .rpc("lookup_registration", {
+            p_name: stored.name,
+            p_student_no4: stored.student_no4,
+          })
+          .abortSignal(timeoutSignal(5_000));
         res = data as RegisterResult | null;
       } catch {
         return; // 오프라인 등 — 저장된 결과를 그대로 보여준다
@@ -139,10 +149,12 @@ export default function RegisterView() {
   const recoverAfterNetworkError = useCallback(async (): Promise<boolean> => {
     let res: RegisterResult | null = null;
     try {
-      const { data } = await getSupabase().rpc("lookup_registration", {
-        p_name: name.trim(),
-        p_student_no4: studentNo.trim(),
-      });
+      const { data } = await getSupabase()
+        .rpc("lookup_registration", {
+          p_name: name.trim(),
+          p_student_no4: studentNo.trim(),
+        })
+        .abortSignal(timeoutSignal(5_000));
       res = data as RegisterResult | null;
     } catch {
       return false;
@@ -167,11 +179,13 @@ export default function RegisterView() {
     setBanner(null);
 
     try {
-      const { data, error: rpcError } = await getSupabase().rpc("register_for_team", {
-        p_team_id: selected.id,
-        p_name: name.trim(),
-        p_student_no4: studentNo.trim(),
-      });
+      const { data, error: rpcError } = await getSupabase()
+        .rpc("register_for_team", {
+          p_team_id: selected.id,
+          p_name: name.trim(),
+          p_student_no4: studentNo.trim(),
+        })
+        .abortSignal(timeoutSignal(10_000));
 
       if (rpcError) throw rpcError;
       const res = data as RegisterResult;
@@ -228,9 +242,7 @@ export default function RegisterView() {
       if (!recovered) {
         setBanner({
           tone: "error",
-          text: `통신에 실패했습니다. 다시 시도해주세요. (${
-            e instanceof Error ? e.message : "network"
-          })`,
+          text: "응답이 늦어 신청 여부를 확인하지 못했어요. 다시 눌러주세요.",
         });
       }
     } finally {
