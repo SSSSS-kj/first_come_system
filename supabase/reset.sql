@@ -12,7 +12,7 @@ drop function if exists public.admin_set_capacity(uuid,int);
 drop function if exists public.admin_create_team(text,text,int,int);
 drop function if exists public.admin_update_team(uuid,text,text,int);
 drop function if exists public.admin_delete_team(uuid);
-drop function if exists public.admin_update_settings(timestamptz,boolean);
+drop function if exists public.admin_update_settings(timestamptz,boolean,boolean,boolean);
 drop function if exists public._audit(text,text,boolean,text,uuid,uuid,uuid,text,jsonb);
 drop function if exists public.audit_log_immutable();
 

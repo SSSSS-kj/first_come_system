@@ -53,7 +53,7 @@
       경로로 기존 배정을 보여주므로 추가 처리 불필요.
     - 어떤 경로로 끝나든 submitting이 해제되어야 한다.
 
-- [ ] T4. 관리자 설정 부분 업데이트
+- [x] T4. 관리자 설정 부분 업데이트
   - 문제: `src/components/AdminView.tsx` 275~279행(오픈 시각 저장)과 297~300행(즉시
     마감 토글)이 opens_at·is_closed를 최대 4초 전 폴링 상태로 둘 다 보내고,
     `src/app/api/admin/settings/route.ts`는 빠진 값을 null/false로 채우며,

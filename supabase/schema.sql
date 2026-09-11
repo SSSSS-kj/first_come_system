@@ -609,27 +609,46 @@ begin
 end;
 $$;
 
+-- 옛 2-인자 시그니처 제거 (부분 업데이트를 지원하는 4-인자 버전으로 교체)
+drop function if exists public.admin_update_settings(timestamptz, boolean);
+
+-- 운영진 둘이 동시에 저장해도 서로의 값을 덮어쓰지 않도록, 플래그가 true 인
+-- 컬럼만 갱신한다. (p_set_opens_at=false 면 opens_at 은 건드리지 않음)
 create or replace function public.admin_update_settings(
-  p_opens_at timestamptz, p_is_closed boolean
+  p_opens_at      timestamptz,
+  p_is_closed     boolean,
+  p_set_opens_at  boolean,
+  p_set_is_closed boolean
 ) returns jsonb
 language plpgsql
 security definer
 set search_path = public, pg_temp
 as $$
+declare
+  v_opens_at  timestamptz;
+  v_is_closed boolean;
 begin
   insert into public.settings (id, opens_at, is_closed, updated_at)
-  values (1, p_opens_at, coalesce(p_is_closed, false), now())
+  values (1,
+          case when p_set_opens_at then p_opens_at else null end,
+          case when p_set_is_closed then coalesce(p_is_closed, false) else false end,
+          now())
   on conflict (id) do update
-    set opens_at   = excluded.opens_at,
-        is_closed  = excluded.is_closed,
-        updated_at = now();
+    set opens_at   = case when p_set_opens_at then excluded.opens_at
+                          else public.settings.opens_at end,
+        is_closed  = case when p_set_is_closed then excluded.is_closed
+                          else public.settings.is_closed end,
+        updated_at = now()
+  returning opens_at, is_closed into v_opens_at, v_is_closed;
 
   perform public._audit('settings_update', 'admin', true, 'ok',
                         null, null, null, null,
-                        jsonb_build_object('opens_at', p_opens_at, 'is_closed', p_is_closed));
+                        jsonb_build_object('opens_at', v_opens_at, 'is_closed', v_is_closed,
+                                            'set_opens_at', p_set_opens_at,
+                                            'set_is_closed', p_set_is_closed));
 
   return jsonb_build_object('ok', true, 'status', 'ok',
-                            'opens_at', p_opens_at, 'is_closed', coalesce(p_is_closed, false),
+                            'opens_at', v_opens_at, 'is_closed', v_is_closed,
                             'server_now', now());
 end;
 $$;
@@ -701,7 +720,7 @@ revoke all on function public.admin_set_capacity(uuid,int)                 from 
 revoke all on function public.admin_create_team(text,text,int,int)         from public, anon, authenticated;
 revoke all on function public.admin_update_team(uuid,text,text,int)        from public, anon, authenticated;
 revoke all on function public.admin_delete_team(uuid)                      from public, anon, authenticated;
-revoke all on function public.admin_update_settings(timestamptz,boolean)   from public, anon, authenticated;
+revoke all on function public.admin_update_settings(timestamptz,boolean,boolean,boolean) from public, anon, authenticated;
 
 grant execute on function public.admin_cancel_registration(uuid)            to service_role;
 grant execute on function public.admin_transfer_registration(uuid,uuid)     to service_role;
@@ -709,7 +728,7 @@ grant execute on function public.admin_set_capacity(uuid,int)               to s
 grant execute on function public.admin_create_team(text,text,int,int)       to service_role;
 grant execute on function public.admin_update_team(uuid,text,text,int)      to service_role;
 grant execute on function public.admin_delete_team(uuid)                    to service_role;
-grant execute on function public.admin_update_settings(timestamptz,boolean) to service_role;
+grant execute on function public.admin_update_settings(timestamptz,boolean,boolean,boolean) to service_role;
 
 -- ────────────────────────────────────────────────────────────────────────────
 --  6. Realtime publication

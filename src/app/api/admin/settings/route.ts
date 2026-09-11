@@ -13,14 +13,22 @@ export async function PATCH(req: Request) {
   const body = await readJson<Body>(req);
   if (!body) return json({ ok: false, status: "invalid_body" }, 400);
 
+  const setOpensAt = "opens_at" in body;
+  const setIsClosed = "is_closed" in body;
+  if (!setOpensAt && !setIsClosed) {
+    return json({ ok: false, status: "invalid_body" }, 400);
+  }
+
   const opensAt = body.opens_at ?? null;
-  if (opensAt !== null && Number.isNaN(new Date(opensAt).getTime())) {
+  if (setOpensAt && opensAt !== null && Number.isNaN(new Date(opensAt).getTime())) {
     return json({ ok: false, status: "invalid_opens_at" }, 400);
   }
 
   const { data, error } = await getAdminSupabase().rpc("admin_update_settings", {
     p_opens_at: opensAt,
     p_is_closed: Boolean(body.is_closed),
+    p_set_opens_at: setOpensAt,
+    p_set_is_closed: setIsClosed,
   });
 
   return rpcResponse(data, error);

@@ -265,7 +265,7 @@ export default function AdminView() {
 
           <button
             type="button"
-            disabled={busy === "settings"}
+            disabled={busy === "settings" || !opensAtInput}
             onClick={() =>
               act(
                 "settings",
@@ -274,7 +274,6 @@ export default function AdminView() {
                     method: "PATCH",
                     body: JSON.stringify({
                       opens_at: localInputToIso(opensAtInput),
-                      is_closed: state?.is_closed ?? false,
                     }),
                   }),
                 "오픈 시각을 저장했습니다.",
@@ -295,7 +294,6 @@ export default function AdminView() {
                   call("/api/admin/settings", {
                     method: "PATCH",
                     body: JSON.stringify({
-                      opens_at: state?.opens_at ?? null,
                       is_closed: !state?.is_closed,
                     }),
                   }),
