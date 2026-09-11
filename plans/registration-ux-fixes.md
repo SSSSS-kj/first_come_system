@@ -5,7 +5,7 @@
 
 ## 태스크
 
-- [ ] T1. 오픈 순간 즉시 잠금 해제 + 오픈 전 팀 미리 선택
+- [x] T1. 오픈 순간 즉시 잠금 해제 + 오픈 전 팀 미리 선택
   - 문제: `src/components/RegisterView.tsx` 90~92행의 `serverNow`/`beforeOpen`/`canSubmit`은
     `RegisterView`가 렌더될 때만 계산된다. `Countdown`의 `setRemaining`은 `Countdown`만
     리렌더하므로, 오픈 시각이 지나도 `onOpen` → `refresh()`의 `get_public_state` 응답이

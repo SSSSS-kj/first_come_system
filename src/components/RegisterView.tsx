@@ -87,9 +87,34 @@ export default function RegisterView() {
     })();
   }, []);
 
-  const serverNow = Date.now() + clockOffsetMs;
-  const beforeOpen = !opensAt || serverNow < new Date(opensAt).getTime();
-  const canSubmit = !beforeOpen && !isClosed;
+  const [opened, setOpened] = useState(false);
+
+  // ── 오픈 시각 도달을 Countdown 의 리렌더와 무관하게 직접 추적한다.
+  //    (Countdown 의 setRemaining 은 Countdown 자신만 리렌더하므로,
+  //     get_public_state 응답을 기다리지 않고 오픈 순간 즉시 풀려야 한다.)
+  useEffect(() => {
+    if (!opensAt) {
+      setOpened(false);
+      return;
+    }
+    const target = new Date(opensAt).getTime();
+    const check = () => setOpened(Date.now() + clockOffsetMs >= target);
+    check();
+    const id = setInterval(check, 200);
+    return () => clearInterval(id);
+  }, [opensAt, clockOffsetMs]);
+
+  const canSubmit = opened && !isClosed;
+
+  // ── 선택해 둔 팀이 실시간 갱신으로 정원이 차면 선택을 해제한다.
+  useEffect(() => {
+    if (!selected) return;
+    const t = teams.find((x) => x.id === selected.id);
+    if (t && t.taken >= t.capacity) {
+      setSelected(null);
+      setBanner({ tone: "warn", text: "선택하신 팀이 방금 마감되어 선택이 해제되었습니다." });
+    }
+  }, [teams, selected]);
 
   const totals = useMemo(() => {
     const capacity = teams.reduce((a, t) => a + t.capacity, 0);
@@ -243,7 +268,7 @@ export default function RegisterView() {
         </div>
       )}
 
-      {!isClosed && beforeOpen && (
+      {!isClosed && !opened && (
         <Countdown
           opensAt={opensAt}
           clockOffsetMs={clockOffsetMs}
@@ -315,7 +340,7 @@ export default function RegisterView() {
                 key={t.id}
                 team={t}
                 selected={selected?.id === t.id}
-                disabled={!canSubmit}
+                disabled={isClosed}
                 onSelect={(team) => {
                   setSelected(team);
                   setBanner(null);
@@ -370,7 +395,7 @@ export default function RegisterView() {
         >
           {isClosed
             ? "마감되었습니다"
-            : beforeOpen
+            : !opened
               ? "오픈 전입니다"
               : !selected
                 ? "팀을 선택해주세요"
