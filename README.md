@@ -197,6 +197,18 @@ RPC)로 발사한다. 검증은 `service_role` 로 DB 를 직접 읽어 확인�
 중복 행을 만들지 않고, 클라이언트 쪽에서는 응답을 받지 못했을 때 `lookup_registration()`
 으로 실제 등록 여부를 확인해 결과 화면으로 넘어간다.
 
+`load-test.mjs` 는 RPC 를 직접 두들기는 순수 동시성 테스트다. 실제 참가자가 페이지를
+열어 둔 채 오픈을 기다리다 동시에 신청하는 상황(구독+폴링+시계보정+team_full 재시도+
+네트워크 끊김 복구)까지 재현하려면 `scripts/event-sim.mjs` 를 쓴다.
+
+```bash
+npm run event-sim -- --users 10 --runs 1        # 스크립트 자체 검증(먼저 실행)
+npm run event-sim                                # 기본: 100명 × 3라운드
+```
+
+> ⚠ `__sim__A~D` 팀을 만들고 정리하며, 신청자 수만큼 Realtime 연결을 연다. 100명
+> 규모로 돌리기 전 Supabase 프로젝트의 동시 연결 한도를 확인할 것.
+
 ---
 
 ## 6. Vercel 배포
