@@ -133,7 +133,7 @@ export default function RegisterView() {
   }, [teams]);
 
   const nameValid = name.trim().length >= 1 && name.trim().length <= 40;
-  const snoValid = /^[0-9]{4}$/.test(studentNo.trim());
+  const snoValid = /^[0-9]{10}$/.test(studentNo.trim());
   const formReady = nameValid && snoValid && !!selected;
 
   const persist = useCallback((reg: MyRegistration) => {
@@ -380,22 +380,22 @@ export default function RegisterView() {
           </label>
 
           <label>
-            <span className="text-xs font-medium text-slate-600">학번 뒤 4자리</span>
+            <span className="text-xs font-medium text-slate-600">학번 (10자리)</span>
             <input
               value={studentNo}
               onChange={(e) =>
-                setStudentNo(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))
+                setStudentNo(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))
               }
               inputMode="numeric"
               autoComplete="off"
-              placeholder="1234"
+              placeholder="2024012345"
               className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono text-sm tabular-nums outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </label>
         </div>
 
         <p className="mt-2 text-xs text-slate-500">
-          동명이인 구분을 위해 학번 뒤 4자리를 함께 받습니다. 한 사람은 한 팀에만
+          동명이인 구분을 위해 학번을 함께 받습니다. 한 사람은 한 팀에만
           신청할 수 있습니다.
         </p>
 
@@ -412,7 +412,7 @@ export default function RegisterView() {
               : !selected
                 ? "팀을 선택해주세요"
                 : !formReady
-                  ? "이름과 학번 뒤 4자리를 입력해주세요"
+                  ? "이름과 학번을 입력해주세요"
                   : `${selected.name} 팀으로 신청하기`}
         </button>
       </section>
@@ -434,7 +434,7 @@ export default function RegisterView() {
           <dd className="col-span-2 font-semibold text-slate-900">{name.trim()}</dd>
           <dt className="text-slate-500">학번</dt>
           <dd className="col-span-2 font-mono font-semibold tabular-nums text-slate-900">
-            ···{studentNo}
+            {studentNo}
           </dd>
         </dl>
         <p className="mt-3 text-xs text-slate-500">

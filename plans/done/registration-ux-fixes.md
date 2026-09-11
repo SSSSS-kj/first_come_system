@@ -72,8 +72,11 @@
     - load-test는 settings를 직접 upsert하므로 영향 없는지 확인만 한다.
   - schema.sql 변경 태스크 → 완료 보고에 "Supabase SQL Editor에서 schema.sql 재실행 필요" 명시.
 
-- [ ] T5. 학번 입력 제거, 이름만으로 신청
-  - 배경: 동명이인이 없어 학번 뒤 4자리가 필요 없다. 입력칸을 줄여 신청을 빠르게 한다.
+- [x] T5. (철회됨 — T6로 대체) 학번 입력 제거, 이름만으로 신청
+  - 2026-09-11: 사용자가 "학번 뒤 4자리는 겹칠 수 있으니 학번 10자리를 모두
+    받자"고 요청 — 학번 제거가 아니라 정반대 방향(자리수 확장)으로 결정됨.
+    아래 계획은 실행하지 않음. T6 참고.
+  - 배경(철회 전 원안): 동명이인이 없어 학번 뒤 4자리가 필요 없다. 입력칸을 줄여 신청을 빠르게 한다.
   - 시작 전: DB에 보존할 데이터가 있는지 사용자에게 먼저 묻는다(없으면 reset.sql →
     schema.sql → seed.sql 재실행 안내).
   - 수정:
@@ -90,4 +93,14 @@
     - load-test는 호출 인자만 바뀌지만 기존 검증을 건드리므로 변경 내용을 먼저
       보여주고 승인받는다. 새 검증 T9: "홍길동"과 "홍 길동"을 서로 다른 팀에 동시
       제출 → 정확히 1건 성공.
+  - schema.sql 변경 태스크 → 완료 보고에 "Supabase SQL Editor에서 schema.sql 재실행 필요" 명시.
+
+- [x] T6. 학번 뒤 4자리 → 10자리 전체 입력
+  - 배경: 뒤 4자리만으로는 서로 다른 학생끼리 겹칠 수 있어 학번 전체(10자리)를 받는다.
+    컬럼명(`student_no4`)·RPC 시그니처·UNIQUE 인덱스는 그대로 두고 자리수 검증만 바꿨다.
+  - 수정: `registrations.student_no4` CHECK 제약과 `register_for_team`의 검증 정규식을
+    `^[0-9]{4}$` → `^[0-9]{10}$`로 변경(기존 배포본용 `alter table ... drop/add constraint`
+    포함). RegisterView 입력 길이·라벨·안내문·확인 모달 마스킹(`···`) 제거, AdminView 표의
+    마스킹 제거, `invalid_student_no` 메시지, load-test 의 4자리 리터럴을 10자리로 패딩,
+    README 문구 갱신.
   - schema.sql 변경 태스크 → 완료 보고에 "Supabase SQL Editor에서 schema.sql 재실행 필요" 명시.

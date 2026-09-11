@@ -174,7 +174,7 @@ async function testBurst(round) {
   );
 
   const { settled, elapsedMs } = await fireConcurrently(
-    (i) => register(team.id, `부하테스트${round}_${i}`, String(1000 + (i % 9000))),
+    (i) => register(team.id, `부하테스트${round}_${i}`, String(1000 + (i % 9000)).padStart(10, "0")),
     N,
   );
 
@@ -257,7 +257,7 @@ async function testMultiTab() {
   );
 
   const name = `동시탭테스트_${Date.now()}`;
-  const sno = "4242";
+  const sno = "4242".padStart(10, "0");
 
   const { settled } = await fireConcurrently(
     (i) => register(teams[i % teams.length].id, name, sno),
@@ -323,7 +323,7 @@ async function testCancelReopens(team) {
 
   // 비워진 한 자리를 두고 20명이 다시 경쟁한다.
   const { settled } = await fireConcurrently(
-    (i) => register(team.id, `재신청_${Date.now()}_${i}`, "7777"),
+    (i) => register(team.id, `재신청_${Date.now()}_${i}`, "7777".padStart(10, "0")),
     20,
   );
   const oks = settled.filter((r) => r.value?.ok === true);
@@ -354,7 +354,7 @@ async function testNotOpen() {
   const team = await createTeam(`notopen-${Date.now()}`, 10);
   await setSettings(new Date(Date.now() + 3600_000).toISOString(), false);
 
-  const res = await register(team.id, `오픈전_${Date.now()}`, "0001");
+  const res = await register(team.id, `오픈전_${Date.now()}`, "0001".padStart(10, "0"));
   check(
     "T7a 오픈 전 요청은 not_open 으로 거부",
     res?.ok === false && res.status === "not_open",
@@ -362,7 +362,7 @@ async function testNotOpen() {
   );
 
   await setSettings(new Date(Date.now() - 60_000).toISOString(), true);
-  const res2 = await register(team.id, `마감후_${Date.now()}`, "0002");
+  const res2 = await register(team.id, `마감후_${Date.now()}`, "0002".padStart(10, "0"));
   check(
     "T7b 즉시 마감 상태에서는 closed 로 거부",
     res2?.ok === false && res2.status === "closed",
@@ -382,7 +382,7 @@ async function testDuplicateRetry() {
 
   const team = await createTeam(`duptry-${Date.now()}`, 1);
   const name = `재시도테스트_${Date.now()}`;
-  const sno = "5555";
+  const sno = "5555".padStart(10, "0");
 
   const first = await register(team.id, name, sno);
   check(

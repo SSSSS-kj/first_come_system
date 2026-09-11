@@ -646,7 +646,7 @@ function RegistrationRow({
       </td>
       <td className="py-2 font-medium">{reg.name}</td>
       <td className="py-2 font-mono tabular-nums text-slate-500">
-        ···{reg.student_no4}
+        {reg.student_no4}
       </td>
       <td className="py-2 text-xs text-slate-500">
         {formatDateTime(reg.created_at)}

@@ -34,7 +34,7 @@ create table if not exists public.registrations (
   id           uuid        primary key default gen_random_uuid(),
   team_id      uuid        not null references public.teams(id) on delete restrict,
   name         text        not null check (btrim(name) <> ''),
-  student_no4  text        not null check (student_no4 ~ '^[0-9]{4}$'),
+  student_no4  text        not null check (student_no4 ~ '^[0-9]{10}$'),
   -- 대소문자·공백 차이로 중복 검사를 우회하지 못하도록 정규화한 키
   name_key     text        generated always as
                  (lower(regexp_replace(btrim(name), '\s+', ' ', 'g'))) stored,
@@ -44,7 +44,13 @@ create table if not exists public.registrations (
   cancelled_at timestamptz
 );
 
--- ★ 중복 신청 차단: 취소되지 않은 (이름, 학번뒤4자리) 조합은 전체에서 유일.
+-- 학번 자리수 변경(4자리 → 10자리): 이미 테이블이 존재하는 배포본에는
+-- "create table if not exists" 가 적용되지 않으므로 제약을 다시 건다. (재실행 안전)
+alter table public.registrations drop constraint if exists registrations_student_no4_check;
+alter table public.registrations add constraint registrations_student_no4_check
+  check (student_no4 ~ '^[0-9]{10}$');
+
+-- ★ 중복 신청 차단: 취소되지 않은 (이름, 학번) 조합은 전체에서 유일.
 create unique index if not exists registrations_identity_active_uniq
   on public.registrations (name_key, student_no4) where (not is_cancelled);
 
@@ -187,7 +193,7 @@ begin
     return jsonb_build_object('ok', false, 'status', 'invalid_name', 'server_now', v_now);
   end if;
 
-  if v_sno !~ '^[0-9]{4}$' then
+  if v_sno !~ '^[0-9]{10}$' then
     perform public._audit('register', 'anon', false, 'invalid_student_no',
                           p_team_id, null, null, v_name, '{}'::jsonb);
     return jsonb_build_object('ok', false, 'status', 'invalid_student_no', 'server_now', v_now);
