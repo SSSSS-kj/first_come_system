@@ -7,11 +7,11 @@
  * `BoardView.tsx`의 동작(구독, 폴링, 시계 보정, team_full 재시도, 네트워크
  * 끊김 복구)까지 그대로 흉내 낸다.
  *
- *   node scripts/event-sim.mjs [--users 100] [--boards 2] [--capacity 10]
+ *   node scripts/event-sim.mjs [--users 60] [--boards 2] [--capacity 15]
  *                               [--runs 3] [--open-in 20] [--force]
  *                               [--site-url https://...]
  *
- * ⚠ __sim__A~D 팀 4개(기본 정원 10)를 만들고 settings.opens_at/is_closed 를
+ * ⚠ __sim__A~D 팀 4개(기본 정원 15)를 만들고 settings.opens_at/is_closed 를
  *   일시적으로 바꾼다. 개발용 프로젝트에서 실행할 것.
  * ⚠ `__` 로 시작하지 않는 실제 팀에 취소되지 않은 신청이 있으면 --force
  *   없이는 실행을 거부한다.
@@ -51,9 +51,9 @@ const strArg = (name, fallback) => {
 };
 const numArg = (name, fallback) => Number(strArg(name, fallback));
 
-const USERS = numArg("users", 100);
+const USERS = numArg("users", 60);
 const BOARDS = numArg("boards", 2);
-const CAPACITY = numArg("capacity", 10);
+const CAPACITY = numArg("capacity", 15);
 const RUNS = numArg("runs", 3);
 const OPEN_IN = numArg("open-in", 20); // 초
 const FORCE = hasFlag("force");
