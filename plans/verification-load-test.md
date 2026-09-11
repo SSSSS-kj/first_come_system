@@ -15,7 +15,7 @@
 
 ## 태스크
 
-- [ ] V1. 사전 점검 + 정적 검증
+- [x] V1. 사전 점검 + 정적 검증
   - git status 클린 여부, `plans/done/registration-ux-fixes.md` 의 적용 태스크
     전부 체크됐는지 확인.
   - `npm ci` → `npm run typecheck` → `npm run build`.
