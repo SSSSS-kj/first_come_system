@@ -161,6 +161,7 @@ declare
   v_opens_at  timestamptz;
   v_is_closed boolean;
   v_name      text;
+  v_name_key  text;
   v_sno       text := btrim(coalesce(p_student_no4, ''));
   v_team_name text;
   v_seq       int;
@@ -176,6 +177,8 @@ declare
 begin
   -- 0) 입력 정규화 및 검증 -------------------------------------------------
   v_name := regexp_replace(btrim(coalesce(p_name, '')), '\s+', ' ', 'g');
+  -- registrations.name_key 생성 컬럼식과 동일한 정규화(39행)를 그대로 재사용한다.
+  v_name_key := lower(regexp_replace(btrim(v_name), '\s+', ' ', 'g'));
 
   if char_length(v_name) < 1 or char_length(v_name) > 40 then
     perform public._audit('register', 'anon', false, 'invalid_name',
@@ -206,6 +209,30 @@ begin
                           jsonb_build_object('opens_at', v_opens_at));
     return jsonb_build_object('ok', false, 'status', 'not_open',
                               'opens_at', v_opens_at, 'server_now', v_now);
+  end if;
+
+  -- 1.5) 이미 신청되어 있는지 좌석을 건드리기 전에 먼저 확인 ----------------
+  --      정원이 찬 뒤 재시도해도 team_full 이 아니라 본인 배정을 그대로 보여준다.
+  select r.id, r.seq, r.team_id, t.name, r.created_at
+    into v_dup_id, v_dup_seq, v_dup_team, v_dup_team_nm, v_dup_created
+    from public.registrations r
+    join public.teams t on t.id = r.team_id
+   where r.name_key = v_name_key
+     and r.student_no4 = v_sno
+     and not r.is_cancelled
+   limit 1;
+
+  if v_dup_id is not null then
+    perform public._audit('register', 'anon', false, 'duplicate_name',
+                          p_team_id, null, v_dup_id, v_name,
+                          jsonb_build_object('student_no4', v_sno));
+    return jsonb_build_object(
+      'ok', false, 'status', 'duplicate_name', 'server_now', v_now,
+      'existing', jsonb_build_object(
+        'registration_id', v_dup_id, 'team_id', v_dup_team,
+        'team_name', v_dup_team_nm, 'seq', v_dup_seq, 'created_at', v_dup_created
+      )
+    );
   end if;
 
   -- 2) ★ 원자적 좌석 확보 + 순번 발급 --------------------------------------
@@ -251,7 +278,7 @@ begin
       into v_dup_id, v_dup_seq, v_dup_team, v_dup_team_nm, v_dup_created
       from public.registrations r
       join public.teams t on t.id = r.team_id
-     where r.name_key = lower(v_name)
+     where r.name_key = v_name_key
        and r.student_no4 = v_sno
        and not r.is_cancelled
      limit 1;

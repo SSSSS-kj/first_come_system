@@ -12,6 +12,7 @@
  *   T5  같은 사람이 여러 팀에 동시 제출 → 정확히 1건만 성공
  *   T6  관리자가 취소한 자리가 다시 선착순 대상이 됨
  *   T7  오픈 시각 이전 요청은 서버가 거부
+ *   T8  이미 신청한 사람이 같은 팀에 재신청 → team_full 대신 기존 배정 안내
  *
  * ⚠ 이 스크립트는 테스트용 팀과 신청 데이터를 생성/삭제하고
  *   settings.opens_at 을 일시적으로 바꾼다. 개발용 프로젝트에서 실행할 것.
@@ -375,6 +376,45 @@ async function testNotOpen() {
   check("T7c 거부된 요청은 행을 만들지 않음", count === 0, `행 ${count}개`);
 }
 
+// ── T8 : 이미 신청한 사람의 재신청은 기존 배정을 그대로 돌려줌 ───────
+async function testDuplicateRetry() {
+  console.log("\n▶ 정원이 찬 뒤 같은 사람이 같은 팀에 재신청하는지 (team_full 아님)");
+
+  const team = await createTeam(`duptry-${Date.now()}`, 1);
+  const name = `재시도테스트_${Date.now()}`;
+  const sno = "5555";
+
+  const first = await register(team.id, name, sno);
+  check(
+    "T8a 정원 1 팀에 첫 신청 성공",
+    first?.ok === true,
+    `status=${first?.status}`,
+  );
+
+  const retry = await register(team.id, name, sno);
+  check(
+    "T8b 같은 사람이 같은 팀에 재신청 → duplicate_name",
+    retry?.ok === false && retry.status === "duplicate_name",
+    `status=${retry?.status}`,
+  );
+  check(
+    "T8c existing.team_id 가 기존 배정과 일치",
+    retry?.existing?.team_id === team.id,
+    `existing=${JSON.stringify(retry?.existing)}`,
+  );
+
+  const { data: after } = await admin
+    .from("teams")
+    .select("taken")
+    .eq("id", team.id)
+    .single();
+  check(
+    "T8d 재신청으로 taken 이 늘지 않고 1로 유지",
+    after?.taken === 1,
+    `taken=${after?.taken}`,
+  );
+}
+
 // ── 실행 ─────────────────────────────────────────────────────────────
 async function main() {
   console.log(
@@ -395,6 +435,7 @@ async function main() {
     await testMultiTab();
     await testCancelReopens(lastTeam);
     await testNotOpen();
+    await testDuplicateRetry();
   } catch (e) {
     check("실행 오류", false, String(e));
   } finally {

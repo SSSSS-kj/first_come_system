@@ -22,7 +22,7 @@
   - 완료 보고: 수동 확인 시나리오 포함 — 오픈 1분 뒤로 설정 → 팀·이름 미리 입력 →
     카운트다운 0 순간 응답을 기다리지 않고 버튼 활성화.
 
-- [ ] T2. 이미 신청한 사람이 재신청하면 team_full 대신 기존 배정 안내
+- [x] T2. 이미 신청한 사람이 재신청하면 team_full 대신 기존 배정 안내
   - 문제: `supabase/schema.sql`의 `register_for_team`은 좌석 UPDATE(215행)를 INSERT보다
     먼저 한다. 이미 A팀에 배정된 사람이 A팀이 꽉 찬 뒤 A팀에 재시도하면 duplicate_name이
     아니라 team_full이 나가 "방금 마감, 다른 팀 선택"이 뜬다. 또 unique_violation
