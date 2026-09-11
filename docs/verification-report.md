@@ -36,7 +36,42 @@
   실행 전에는 `__sim__A~D` 팀 생성 로직이 기존 teams 유무에 의존하지 않는지
   스크립트 작성 시 확인 필요.
 
-## V2. 기존 동시성 테스트 — 미실행
+## V2. 기존 동시성 테스트 — FAIL (T8, 테스트 스크립트 결함으로 판단)
+
+`npm run load-test -- --n 100 --capacity 10 --rounds 3` 실행 결과: **23/27 통과**.
+
+- T1~T7 (round 1~3 포함): 전부 PASS.
+  - burst 100건 → 성공 정확히 10건, p95: round1 1157ms / round2 541ms / round3 491ms.
+  - T5(멀티탭 동일인 동시제출), T6(취소 후 재오픈, seq 재사용 안 됨), T7(오픈전/즉시마감 거부) 전부 PASS.
+- **T8a~T8d FAIL** — 전부 `status=closed`:
+  ```
+  ✗ T8a 정원 1 팀에 첫 신청 성공 — status=closed
+  ✗ T8b 같은 사람이 같은 팀에 재신청 → duplicate_name — status=closed
+  ✗ T8c existing.team_id 가 기존 배정과 일치 — existing=undefined
+  ✗ T8d 재신청으로 taken 이 늘지 않고 1로 유지 — taken=0
+  ```
+
+### 원인 추정 — 앱 버그가 아니라 `scripts/load-test.mjs`의 테스트 간 상태 오염
+
+`main()`에서 `testNotOpen()`(T7) 다음에 곧바로 `testDuplicateRetry()`(T8)를 호출한다
+(`scripts/load-test.mjs:441` 부근). `testNotOpen()`의 T7b 서브테스트가
+`setSettings(..., true)`로 `settings.is_closed`를 `true`로 바꿔두고, T7 함수 안에서는
+이를 되돌리지 않는다. `settings.is_closed`가 `original` 값으로 복원되는 지점은
+`main()`의 `finally` 블록(모든 테스트가 끝난 뒤) 뿐이다. 따라서 T8이 실행되는
+시점에는 여전히 `is_closed=true`이고, `register_for_team()`은 `is_closed`를
+duplicate-check보다 먼저 검사하므로(`supabase/schema.sql` 199~206행) 모든 호출이
+`status=closed`로 즉시 거부된다.
+
+실제 앱의 "이미 신청한 사람이 재신청하면 team_full 대신 기존 배정 안내"
+기능(`registration-ux-fixes.md` T2)은 `is_closed=false`인 정상 운영 상태를
+전제로 하므로 이번 결과로 회귀가 있다고 볼 근거는 없다. 다만 T8은 유효한 조건에서
+**한 번도 검증되지 못했다** — 재현하려면 `testNotOpen()`과 `testDuplicateRetry()`
+사이에 `await setSettings(new Date(Date.now() - 60_000).toISOString(), false);`
+를 넣거나, T8을 T7보다 먼저 실행하면 된다.
+
+수정은 이번 검증 범위 밖(별도 계획)이라 적용하지 않음. → 계획 지시("하나라도 FAIL이면
+여기서 멈추고 출력 원문을 보고한다")에 따라 V2 체크박스는 미완료로 남기고 보고함.
+
 
 ## V3. 실제 행사 시뮬레이션 — 미실행 (`scripts/event-sim.mjs` 아직 미작성)
 
