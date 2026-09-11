@@ -63,7 +63,7 @@ export default function AdminView() {
   const [newTeam, setNewTeam] = useState({
     name: "",
     description: "",
-    capacity: 10,
+    capacity: 15,
   });
 
   const notify = useCallback((tone: "ok" | "error", text: string) => {
@@ -404,7 +404,7 @@ export default function AdminView() {
                       sort_order: (state?.teams.length ?? 0) + 1,
                     }),
                   });
-                  if (r.ok) setNewTeam({ name: "", description: "", capacity: 10 });
+                  if (r.ok) setNewTeam({ name: "", description: "", capacity: 15 });
                   return r;
                 },
                 "팀을 추가했습니다.",

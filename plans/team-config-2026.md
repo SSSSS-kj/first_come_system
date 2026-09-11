@@ -31,7 +31,7 @@
 
 ## 태스크
 
-- [ ] C1. 팀 데이터 반영
+- [x] C1. 팀 데이터 반영
   - `supabase/seed.sql`: 위 표대로 4개 팀으로 교체(새로 세팅하는 DB용).
   - `supabase/update-teams-2026.sql` 신규: 이미 옛 팀이 들어 있는 DB에 SQL
     Editor로 한 번 실행하는 스크립트. 한 트랜잭션으로 옛 이름 → 새
